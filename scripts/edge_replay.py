@@ -77,7 +77,7 @@ def mean_between(samples, t0, t1):
     return (float(np.mean(v)) if v else float("nan")), len(v)
 
 def main():
-    d = "/home/pyloxsystems/jpt_edge/libero/"
+    d = _o.environ.get("JPT_ENGINE_DIR", "./engines/")  # dir holding the built .plan files
     V1 = Engine(d + "vision1_fp16.plan")
     INCR = _o.environ.get("INCR") == "1"
     Sa = Engine(d + "stateA_fp32.plan") if INCR else None
