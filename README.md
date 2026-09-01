@@ -75,13 +75,13 @@ observations; task success is evaluated in the standard LIBERO simulator.
 
 ## Layout
 
-- `paper/` — the paper (PDF and source), figures
-- `scripts/` — export pipeline, measurement harness, evaluation
-  - `export_engines.py`, `engines.py` — TensorRT decomposition
-  - `edge_measure.py`, `edge_replay.py` — power sampling and replay
-  - `eval_stack.py`, `eval_with_reuse.py`, `eval_onestep.py` — evaluation
-  - `distill_lora.py` — one-step action-head distillation
-  - `dump_reference.py`, `probe_onnx_export.py` — numerical validation against fp32
+- `paper/`: the paper (PDF and source), figures
+- `scripts/`: export pipeline, measurement harness, evaluation
+  - `export_engines.py`, `engines.py`: TensorRT decomposition
+  - `edge_measure.py`, `edge_replay.py`: power sampling and replay
+  - `eval_stack.py`, `eval_with_reuse.py`, `eval_onestep.py`: evaluation
+  - `distill_lora.py`: one-step action-head distillation
+  - `dump_reference.py`, `probe_onnx_export.py`: numerical validation against fp32
 
 ## Reproducing
 
