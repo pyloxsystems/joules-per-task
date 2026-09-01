@@ -1,0 +1,41 @@
+# JPT-Aerial energy re-measurement
+# host: pyloxsystems-desktop  date: 2026-08-31T22:10:25-04:00
+# tegrastats idle sample:
+08-31-2026 22:10:26 RAM 1598/7620MB (lfb 144x4MB) SWAP 525/12002MB (cached 82MB) CPU [5%@1728,0%@1728,2%@1728,1%@1728,1%@1728,1%@1728] GR3D_FREQ 0% cpu@56.75C soc2@55.562C soc0@56.562C gpu@56.687C tj@57.468C soc1@57.468C VDD_IN 6937mW/6937mW VDD_CPU_GPU_CV 1552mW/1552mW VDD_SOC 2392mW/2392mW
+08-31-2026 22:10:27 RAM 1598/7620MB (lfb 144x4MB) SWAP 525/12002MB (cached 82MB) CPU [3%@1728,1%@1728,4%@1728,2%@1728,0%@1728,1%@1728] GR3D_FREQ 0% cpu@56.875C soc2@55.468C soc0@56.562C gpu@56.687C tj@57.343C soc1@57.343C VDD_IN 6937mW/6937mW VDD_CPU_GPU_CV 1552mW/1552mW VDD_SOC 2392mW/2392mW
+
+########## policy=aerial mode=default n=300 ##########
+nvpmodel: 2
+
+===== JPT-Aerial | DCE nav stack | Jetson Orin Nano =====
+idle VDD_IN 6897 mW (136) | active 8146 mW (25)
+latency/step 1.24 ms  (806 Hz)  p50 1.23 ms
+JOULES/STEP gross=10.10 mJ  net=1.55 mJ
+
+########## policy=vint mode=baseline n=200 ##########
+===== ViNT 30M | Orin Nano | mode=baseline tau=0.01 =====
+idle 6916 mW | active 9634 mW | latency/step 4.44 ms (225 Hz)
+encodes=200 skips=0 skip-rate=0.0%
+JOULES/STEP gross=42.78 mJ  net=12.07 mJ
+
+########## policy=vint mode=reuse n=200 ##########
+===== ViNT 30M | Orin Nano | mode=reuse tau=0.01 =====
+idle 6897 mW | active 6985 mW | latency/step 0.32 ms (3093 Hz)
+encodes=1 skips=199 skip-rate=99.5%
+JOULES/STEP gross=2.26 mJ  net=0.03 mJ
+
+########## policy=nomad mode=baseline n=200 ##########
+===== NoMaD 19M | Orin Nano | mode=baseline tau=0.01 iters=10 =====
+idle 6897 mW | active 10092 mW
+latency/step 21.66 ms (46 Hz)
+vision: encodes=200 skips=0 skip-rate=0.0%
+JOULES/STEP gross=218.59 mJ  net=69.21 mJ
+
+########## policy=nomad mode=reuse n=200 ##########
+===== NoMaD 19M | Orin Nano | mode=reuse tau=0.01 iters=10 =====
+idle 6897 mW | active 9356 mW
+latency/step 15.08 ms (66 Hz)
+vision: encodes=1 skips=199 skip-rate=99.5%
+JOULES/STEP gross=141.09 mJ  net=37.09 mJ
+
+# DONE 2026-08-31T22:11:31-04:00

@@ -1,22 +1,23 @@
-# Joules Per Task: Energy Measurements and an Energy-Accuracy Analysis for a Vision-Language-Action Policy on Embedded Hardware
+# Joules Per Task: Energy Measurements for Learned Policies on Embedded Hardware, and an Energy-Accuracy Analysis for a Vision-Language-Action Policy
 
 **Emilio Girard**
 Mach Inference Corp.
 
 ## Abstract
 
-Although energy availability constrains the mission duration of mobile robots, the energy consumption of vision-language-action (VLA) policies has not previously been reported: a recent survey of VLA efficiency metrics identifies direct energy estimation as an open problem and adopts kinematic proxies in its place [1], and a review of sixteen recent works on VLA inference efficiency finds that none reports energy in any form. This paper presents hardware energy measurements for a VLA policy evaluated against a standard manipulation benchmark. SmolVLA (450M parameters) [2] is deployed on a Jetson Orin Nano through a multi-engine TensorRT decomposition whose outputs agree with fp32 reference execution to a maximum action-space deviation of 2.5e-3; power is sampled from the module's INA3221 instrumentation at 10 ms intervals, and task success is evaluated on LIBERO-Spatial [3] with 100 episodes per configuration. The baseline configuration consumes 963 J (0.27 Wh) per successful task at 70% success. Three inference optimizations are then evaluated jointly for energy and success: (i) threshold-gated reuse of visual encodings across control steps; (ii) an incremental prefill that exploits the structure of the policy's prefix attention mask to update a single token exactly, in place of full 177-token recomputation; and (iii) one-step distillation of the flow-matching action head under a low-rank adaptation constraint. The combination of (i) and (ii) reduces energy to 489 J per successful task, a 49% reduction, with success statistically indistinguishable from baseline (68% versus 70%, n=100 per condition, z=0.31); it requires no additional training. The full combination reaches 0.68 J per control step at 21 Hz, a 6.3-fold energy reduction and 4.9-fold latency reduction, at a measured cost in success rate. The analysis further establishes the failure boundary of visual reuse (success collapses from 68% to 4% between 72% and 93% skip rates), identifies an interaction in which one-step distilled policies exhibit substantially greater sensitivity to stale visual conditioning than their ten-step teachers, and documents six deployment failure modes, including silent corruption of prefill activations caused by fp16 normalization overflow under TensorRT. All measurements are reproducible from released scripts.
+Although energy availability constrains the mission duration of mobile robots, the energy consumption of vision-language-action (VLA) policies has not previously been reported: a recent survey of VLA efficiency metrics identifies direct energy estimation as an open problem and adopts kinematic proxies in its place [1], and a review of sixteen recent works on VLA inference efficiency finds that none reports energy in any form. This paper presents hardware energy measurements for a VLA policy evaluated against a standard manipulation benchmark. SmolVLA (450M parameters) [2] is deployed on a Jetson Orin Nano through a multi-engine TensorRT decomposition whose outputs agree with fp32 reference execution to a maximum action-space deviation of 2.5e-3; power is sampled from the module's INA3221 instrumentation at 10 ms intervals, and task success is evaluated on LIBERO-Spatial [3] with 100 episodes per configuration. The baseline configuration consumes 963 J (0.27 Wh) per successful task at 70% success. Three inference optimizations are then evaluated jointly for energy and success: (i) threshold-gated reuse of visual encodings across control steps; (ii) an incremental prefill that exploits the structure of the policy's prefix attention mask to update a single token exactly, in place of full 177-token recomputation; and (iii) one-step distillation of the flow-matching action head under a low-rank adaptation constraint. The combination of (i) and (ii) reduces energy to 489 J per successful task, a 49% reduction, with success statistically indistinguishable from baseline (68% versus 70%, n=100 per condition, z=0.31); it requires no additional training. The full combination reaches 0.68 J per control step at 21 Hz, a 6.3-fold energy reduction and 4.9-fold latency reduction, at a measured cost in success rate. The analysis further establishes the failure boundary of visual reuse (success collapses from 68% to 4% between 72% and 93% skip rates), identifies an interaction in which one-step distilled policies exhibit substantially greater sensitivity to stale visual conditioning than their ten-step teachers, and documents six deployment failure modes, including silent corruption of prefill activations caused by fp16 normalization overflow under TensorRT. Three further policies spanning 0.2M to 450M parameters are then measured on the same device and rail, establishing that parameter count does not order energy cost: a 19M-parameter diffusion policy consumes 5.1 times the energy of a 30M-parameter transformer policy because it executes ten sequential denoising passes per control step. Applying the visual-reuse gate to both, beyond the failure boundary and therefore as an energy floor rather than a deployable configuration, returns 18.9x on the transformer policy and 1.55x on the diffusion policy, showing that the payoff of an inference optimization is predictable from where a policy's sequential computation resides. All measurements are reproducible from released scripts.
 
 ## 1. Introduction
 
 Evaluations of robot manipulation policies report task success and, increasingly, control latency. Energy consumption is generally absent, despite the fact that onboard computation and actuation draw from a shared battery budget and that battery capacity improves slowly relative to the growth in model size. The omission appears to be practical rather than principled. Credible energy measurement requires simultaneously (a) executing a modern VLA on power-instrumented embedded hardware, for which mainstream robot-learning frameworks provide no runtime, and (b) validating task success, which requires a benchmark environment. Li et al. [1] state that reliable energy estimation is not achievable in simulation and substitute kinematic proxies such as jerk and path length. Vendor materials for embedded platforms report latency and relative chip-level efficiency figures, but not absolute energy for policy workloads.
 
-This paper makes four contributions:
+This paper makes five contributions:
 
 1. A metric and its first instantiation. Joules-per-successful-task is defined as measured module energy divided by the number of benchmark successes, with success evaluated in the standard simulator and energy integrated from power-rail measurements on hardware executing a numerically validated implementation of the identical policy.
 2. A deployment pipeline for SmolVLA-class policies on Orin-class devices, for which no PyTorch runtime exists. The pipeline decomposes inference into separately built TensorRT engines with an exact, stateless per-step key-value cache contract; its construction surfaced six failure modes that are documented for reproducibility (Section 3.1).
 3. A joint energy-accuracy analysis of three inference optimizations, spanning exact (no accuracy risk) to lossy (measured accuracy cost), including the failure boundary of the most aggressive setting.
-4. Two empirical observations with design implications: first, 72% of visual encoder invocations in the benchmark workload can be elided without measurable effect on success, although vision accounts for 55% of step latency; second, one-step distilled policies degrade substantially more than ten-step policies under identical visual staleness, indicating that inference optimizations for VLA policies interact and require joint evaluation.
+4. A four-policy energy comparison spanning three orders of magnitude of parameter count on a single device and rail, establishing that sequential pass count rather than parameter count governs edge energy, and that the return on a given inference optimization is predictable from the policy's structure (Section 6.4).
+5. Two empirical observations with design implications: first, 72% of visual encoder invocations in the benchmark workload can be elided without measurable effect on success, although vision accounts for 55% of step latency; second, one-step distilled policies degrade substantially more than ten-step policies under identical visual staleness, indicating that inference optimizations for VLA policies interact and require joint evaluation.
 
 ## 2. Related Work
 
@@ -106,9 +107,59 @@ The R+I configuration reduces energy per successful task from 963 J to 489 J, a 
 
 **Divergence of offline and closed-loop metrics.** A fine-tuned expert whose offline flow-matching loss was 35% above the pretrained reference was behaviorally nonviable, at 0% success, while its loss trajectory throughout training appeared unremarkable. Early closed-loop evaluation of intermediate checkpoints proved necessary for diagnosing training health.
 
+### 6.4 The policy spectrum: where energy lives
+
+The measurements above characterize one policy. To test whether the accounting
+generalizes, three further policies were deployed on the same device through the
+same TensorRT pipeline and measured on the same power rail: DCE (0.2M parameters,
+a depth-conditioned drone navigation policy), ViNT (30M, a transformer visual
+navigation policy), and NoMaD (19M, a diffusion visual navigation policy running
+ten denoising steps per control step). Together with SmolVLA (450M) these span
+three orders of magnitude in parameter count.
+
+| Policy | Parameters | Gross mJ/step | Net mJ/step |
+|---|---|---|---|
+| DCE | 0.2M | 10.10 | 1.55 |
+| ViNT | 30M | 42.78 | 12.07 |
+| NoMaD | 19M | 218.59 | 69.21 |
+| SmolVLA | 450M | 4310 | - |
+
+Gross energy includes the module's idle draw, measured at 6.90 W; net energy
+subtracts it. Both are reported because the distinction is large on a platform
+whose idle draw is comparable to its active draw, and because a comparison across
+platforms that does not state which convention it uses is uninterpretable.
+
+The ordering is not monotonic in parameter count. NoMaD, at 19M parameters,
+consumes 5.1 times the energy of ViNT at 30M (5.7 times on net), because it
+executes ten sequential denoising passes per control step where ViNT executes one
+forward pass. Parameter count is therefore not a usable proxy for the energy cost
+of a policy at the edge; the number of sequential passes through the network is
+the dominant term.
+
+A second measurement isolates the mechanism. The visual-reuse gate of Section 5.1
+was applied to both navigation policies at a threshold that elides 99.5% of
+encoder invocations. This skip rate is far beyond the failure boundary established
+in Section 6.2, so the resulting configurations are not proposed as deployable;
+they instead measure the energy floor that each architecture approaches when its
+visual encoder is made arbitrarily cheap.
+
+| Policy | Baseline mJ/step | 99.5% skip mJ/step | Reduction |
+|---|---|---|---|
+| ViNT | 42.78 | 2.26 | 18.9x |
+| NoMaD | 218.59 | 141.09 | 1.55x |
+
+The identical intervention returns 18.9x on one policy and 1.55x on the other.
+ViNT approaches zero because its encoder constitutes nearly the whole network.
+NoMaD does not, because eliminating vision entirely leaves its ten denoising
+passes untouched, and those are where its energy resides. The consequence for
+practitioners is that the effectiveness of an inference optimization is predictable
+from the structure of the policy before the optimization is implemented: encoder
+elision is worthwhile in proportion to the encoder's share of the computation,
+and diffusion-dominated policies require step-count reduction instead.
+
 ## 7. Limitations
 
-The study covers one policy, one benchmark suite, one device, and one evaluation seed set, with n=100 per configuration corresponding to a standard error of approximately 4.6 percentage points near 70% success. Energy is measured on replayed observation streams, which are deterministic and comparable across configurations, rather than in closed loop on the device; the deployed implementation is numerically validated against the reference policy end to end. Gate thresholds operate on raw pixel differences and were not tuned per camera; simulator and replay skip rates differ at equal τ (17-35% versus 33-50%) owing to preprocessing-domain differences, and results are accordingly reported as simulator-measured success paired with device-measured energy at matched skip rates. The nine-point success gap of the distilled policy may narrow under distillation objectives developed concurrently with this work [10]; the present contribution is the energy accounting and the failure analysis rather than a claim regarding distillation quality.
+The joint energy-accuracy analysis covers one policy, one benchmark suite, one device, and one evaluation seed set, with n=100 per configuration corresponding to a standard error of approximately 4.6 percentage points near 70% success. Energy is measured on replayed observation streams, which are deterministic and comparable across configurations, rather than in closed loop on the device; the deployed implementation is numerically validated against the reference policy end to end. Gate thresholds operate on raw pixel differences and were not tuned per camera; simulator and replay skip rates differ at equal τ (17-35% versus 33-50%) owing to preprocessing-domain differences, and results are accordingly reported as simulator-measured success paired with device-measured energy at matched skip rates. The nine-point success gap of the distilled policy may narrow under distillation objectives developed concurrently with this work [10]; the present contribution is the energy accounting and the failure analysis rather than a claim regarding distillation quality. The four-policy comparison of Section 6.4 shares the single-device limitation and reports single runs per configuration; repeated measurement of the same configuration varied by 5 to 8%, so the reported ratios are robust to that variation but the absolute values should be read at that precision. Task success was not evaluated for the two navigation policies, so their energy figures are reported per control step rather than per successful task.
 
 ## 8. Reproducibility
 

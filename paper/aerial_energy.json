@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "device": "Jetson Orin Nano",
+    "rail": "INA3221 VDD_IN",
+    "sample_interval_ms": 10,
+    "precision": "TensorRT FP16",
+    "date": "2026-08-31",
+    "idle_mW": 6897,
+    "note": "gross includes board idle draw; net subtracts measured idle. reuse mode gates the vision encoder on frame-stack change (tau=0.01) on replayed FPV flight frames. CAVEAT: skip-rate 99.5% means the encoder ran once in 200 steps; energy saving is only meaningful alongside an action-fidelity or task-success measure, not yet reported here."
+  },
+  "measurements": [
+    {
+      "policy": "DCE",
+      "params_M": 0.2,
+      "mode": "baseline",
+      "gross_mJ": 10.1,
+      "net_mJ": 1.55,
+      "skip_rate": null
+    },
+    {
+      "policy": "ViNT",
+      "params_M": 30,
+      "mode": "baseline",
+      "gross_mJ": 42.78,
+      "net_mJ": 12.07,
+      "skip_rate": 0.0
+    },
+    {
+      "policy": "ViNT",
+      "params_M": 30,
+      "mode": "reuse",
+      "gross_mJ": 2.26,
+      "net_mJ": 0.03,
+      "skip_rate": 0.995
+    },
+    {
+      "policy": "NoMaD",
+      "params_M": 19,
+      "mode": "baseline",
+      "gross_mJ": 218.59,
+      "net_mJ": 69.21,
+      "skip_rate": 0.0
+    },
+    {
+      "policy": "NoMaD",
+      "params_M": 19,
+      "mode": "reuse",
+      "gross_mJ": 141.09,
+      "net_mJ": 37.09,
+      "skip_rate": 0.995
+    }
+  ]
+}
