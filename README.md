@@ -5,10 +5,7 @@ Energy measurements for a vision-language-action policy on embedded hardware.
 **963 J per successful task** on a Jetson Orin Nano (SmolVLA, LIBERO-Spatial, n=100),
 reduced to **489 J** with no measurable accuracy cost and no additional training.
 
-These appear to be the first hardware energy measurements reported for a VLA policy
-on a standard manipulation benchmark. A 2026 survey of VLA efficiency metrics lists
-direct energy estimation as an open problem and substitutes kinematic proxies; a
-review of sixteen recent efficiency papers found none reporting energy in any form.
+Energy is rarely reported for VLA policies. A 2026 survey of VLA efficiency metrics lists direct energy estimation as an open problem and substitutes kinematic proxies. One concurrent study (Zhou et al., arXiv:2604.24447, April 2026) measures VLA energy with a power meter on Jetson AGX Orin and Thor and reports it alongside, but not divided by, task success. This work targets the Orin Nano, the smallest Jetson module, and charges energy to successful tasks so that a configuration which saves energy by failing more often pays for its failures.
 
 ## Results
 
