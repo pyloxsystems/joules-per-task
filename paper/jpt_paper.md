@@ -1,7 +1,7 @@
 # Joules Per Task: Energy Measurements for Learned Policies on Embedded Hardware, and an Energy-Accuracy Analysis for a Vision-Language-Action Policy
 
 **Emilio Girard**
-Pylox Systems Inc., Montréal, Canada. pyloxsystems@gmail.com
+Independent researcher, Montréal, Canada. emiliogirard.com
 
 ## Abstract
 

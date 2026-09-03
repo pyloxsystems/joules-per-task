@@ -62,6 +62,13 @@ Caveats kept in the open: single runs per configuration, with repeat measurement
 varying 5 to 8%; no task-success number for the two navigation policies, so their
 figures are per control step rather than per successful task.
 
+## Raw measurement artifacts
+
+- `paper/edge_logs/`: the on-device replay summaries from the Orin Nano, one file per configuration (idle and active VDD_IN, sample counts, latency per step, vision skip rate, gross and net joules per step). `measure_libero.log` is the validation run (TRT vs fp32 max deviation 2.5e-3).
+- `paper/episode_steps.json`: per-episode step counts for the 100 LIBERO-Spatial episodes (15,650 steps, mean 156.5), the denominator behind joules per successful task. Baseline: 4.310 J/step x 15,650 / 70 successes = 963 J. R+I at tau 0.05: 2.124 x 15,650 / 68 = 489 J.
+- `paper/sim_eval_summaries.txt`: the final summary line of every simulator success evaluation, with sizes and timestamps of the full logs.
+- `paper/aerial_energy.json`, `paper/aerial_energy_*.txt`: the four-policy spectrum measurements.
+
 ## Method
 
 SmolVLA (450M) decomposed into separately built TensorRT engines with an exact,

@@ -1,0 +1,9 @@
+<frozen importlib._bootstrap_external>:1184: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+nvpmodel: 2
+TRT[split] vs eager-fp32: max=0.0025  mean=0.00031
+VALIDATION: PASS
+
+===== SmolVLA 3-engine TRT [split] | Jetson Orin Nano =====
+idle VDD_IN: 6894 mW (136 samples) | active: 19713 mW (2010 samples)
+latency/chunk: 298.6 ms (p50 298.4)  actions/chunk: 50  denoise steps: 10
+JOULES/CHUNK gross=5.887 J  net=3.828 J   |  117.7 mJ/action gross

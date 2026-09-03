@@ -1,0 +1,8 @@
+<frozen importlib._bootstrap_external>:1184: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+replay stream: 635 steps  mode=reuse tau=0.02
+
+===== REPLAY [reuse tau=0.02] 1905 steps (3x635) =====
+idle 7059 mW | active 17752 mW (24633 samples)
+latency/step 192.4 ms
+vision: encodes=1914 skips=1896 skip-rate=49.8%  (cam1 1638/1905, cam2 258/1905)
+JOULES/STEP gross=3.415 net=2.057
