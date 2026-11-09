@@ -1,9 +1,11 @@
 # Joules Per Task
 
+> **Correction, 2026-11-09.** The first version of this repository reported 489 J per successful task at 68% success for visual reuse plus exact incremental prefill at tau=0.05. That pairing was wrong. The 68% belongs to the tau=0.02 evaluation (34.6% skip rate); the tau=0.05 evaluation (71.7% skip rate) scored 51%. Corrected, that configuration costs about 652 J per successful task (2.124 J per step x 15,650 steps / 51 successes), 32% below the 963 J baseline, but the drop in success from 70% to 51% is significant (z about 2.75), and the figure understates the energy cost because failed episodes run longer than the baseline step count assumes. Visual reuse alone at tau=0.02 costs about 786 J per successful task at 68% success (18% below baseline, success not significantly different); reuse plus exact prefill at tau=0.02 was not measured. The claim that one-step policies are more sensitive to visual staleness is withdrawn, the 100 Wh battery figure in the paper is 374 tasks rather than 274, and synthetic inputs overstate baseline energy by 37% rather than 27%. The paper (`paper/jpt_paper.pdf`) carries the full list of changes.
+
 Energy measurements for a vision-language-action policy on embedded hardware.
 
 **963 J per successful task** on a Jetson Orin Nano (SmolVLA, LIBERO-Spatial, n=100),
-reduced to **489 J** with no measurable accuracy cost and no additional training.
+reduced to about **786 J** (18% lower) by visual reuse at tau=0.02, with no significant change in success (68% versus 70%) and no additional training. More aggressive reuse saves more energy per step but costs success: at tau=0.05, reuse plus exact incremental prefill is about 652 J per successful task at only 51% success.
 
 Energy is rarely reported for VLA policies. A 2026 survey of VLA efficiency metrics lists direct energy estimation as an open problem and substitutes kinematic proxies. One concurrent study (Zhou et al., arXiv:2604.24447, April 2026) measures VLA energy with a power meter on Jetson AGX Orin and Thor and reports it alongside, but not divided by, task success. This work targets the Orin Nano, the smallest Jetson module, and charges energy to successful tasks so that a configuration which saves energy by failing more often pays for its failures.
 
@@ -12,16 +14,19 @@ Energy is rarely reported for VLA policies. A 2026 survey of VLA efficiency metr
 | Configuration | Success | J / successful task |
 |---|---|---|
 | baseline | 70% | 963 |
-| visual reuse + exact incremental prefill | 68% | 489 |
-| full stack (adds one-step distillation) | 46% | lower, at real accuracy cost |
+| visual reuse, tau=0.02 | 68% | 786 |
+| visual reuse + exact incremental prefill, tau=0.05 | 51% | 652 (understated) |
+| full stack (adds one-step distillation), tau=0.05 | 46% | lower, at real accuracy cost |
 
-The middle row is the deployable one: half the energy, success statistically
-indistinguishable from baseline (z=0.31, n=100 per condition), no training required,
-about 30 lines of runtime logic.
+The tau=0.02 row is the deployable one: 18% less energy, success statistically
+indistinguishable from baseline (z=0.31, n=100 per condition), no training required.
+The tau=0.05 row saves 32% but loses 19 points of success (z about 2.75), and its
+energy per task is understated because failed episodes run longer than the baseline
+step count assumes. Reuse plus exact prefill at tau=0.02 was not measured.
 
 Also established here:
-- the failure boundary of visual reuse (success collapses 68% → 4% between 72% and 93% skip rates)
-- an interaction: one-step distilled policies degrade far more than their ten-step teachers under identical visual staleness
+- the failure boundary of visual reuse (success falls from 51% to 4% between 72% and 93% skip rates, against 68% at 35%)
+- no evidence that one-step distilled policies are more sensitive to visual staleness than their ten-step teachers (15 versus 19 points lost at tau=0.05); an earlier version claimed they were
 - six deployment failure modes, including silent corruption of prefill activations from fp16 normalization overflow under TensorRT
 
 ## Policy spectrum (added Sept 2026)
@@ -65,7 +70,7 @@ figures are per control step rather than per successful task.
 ## Raw measurement artifacts
 
 - `paper/edge_logs/`: the on-device replay summaries from the Orin Nano, one file per configuration (idle and active VDD_IN, sample counts, latency per step, vision skip rate, gross and net joules per step). `measure_libero.log` is the validation run (TRT vs fp32 max deviation 2.5e-3).
-- `paper/episode_steps.json`: per-episode step counts for the 100 LIBERO-Spatial episodes (15,650 steps, mean 156.5), the denominator behind joules per successful task. Baseline: 4.310 J/step x 15,650 / 70 successes = 963 J. R+I at tau 0.05: 2.124 x 15,650 / 68 = 489 J.
+- `paper/episode_steps.json`: per-episode step counts for the 100 LIBERO-Spatial episodes (15,650 steps, mean 156.5), the denominator behind joules per successful task. Baseline: 4.310 J/step x 15,650 / 70 successes = 963 J. R at tau 0.02: 3.415 x 15,650 / 68 = 786 J. R+I at tau 0.05: 2.124 x 15,650 / 51 = 652 J (the same step count is applied to every configuration, which understates energy where success is lower).
 - `paper/sim_eval_summaries.txt`: the final summary line of every simulator success evaluation, with sizes and timestamps of the full logs.
 - `paper/aerial_energy.json`, `paper/aerial_energy_*.txt`: the four-policy spectrum measurements.
 
